@@ -1,0 +1,174 @@
+/* Комаров М.А. 17 варинат
+*Задание 1
+*Описание экскурсионных туров. Включает в себя: маршруты, *экскурсии, туры. Маршрут характеризуется названием, городом *отправления, описанием маршрута, базовой ценой (без экскурсий) в *рублях, указанием списка всех возможных для посещения городов и *количеством дней пребывания в них. Экскурсия характеризуется: *указанием города (в каждом городе может быть несколько *экскурсий), названием, описанием и ценой в рублях. Тур *характеризуется: указанием маршрута, датой отъезда, количеством *дней тура, дополнительными взносами, дополнительным описанием.
+*Одна и та же экскурсия не может быть связана с несколькими *городами.
+*
+*Комментари к скрипту. Скрипт проверен на Postgree 18 создал таблицы
+*Объяснение структуры
+*Таблица City содержит список городов с уникальным названием.
+*Таблица Route описывает маршруты с ссылкой на город отправления, *описанием и базовой ценой.
+*RouteCity связывает маршруты и города, указывая количество дней *пребывания в каждом городе маршрута.
+*Таблица Excursion хранит экскурсии, которые всегда связаны с *одним городом (уникальность по паре город-экскурсия) и имеют цену.
+*Таблица Tour описывает конкретные туры с маршрутом, датой *начала, длительностью, дополнительными взносами и описанием.
+*Ограничения целостности
+*Уникальность городов по названию.
+*В маршрутах цена не может быть отрицательной.
+*В связи маршрута и города количество дней пребывания обязательно *и больше нуля.
+*Экскурсии уникальны внутри города, имеют неотрицательную цену.
+*В турах длительность и дополнительные взносы неотрицательны, длительность больше нуля.
+*Одной экскурсии соответствует один город.
+*/
+
+
+
+CREATE TABLE City (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE Route (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    departure_city_id INT NOT NULL REFERENCES City(id),
+    description TEXT,
+    base_price NUMERIC(10, 2) NOT NULL CHECK (base_price >= 0)
+);
+
+CREATE TABLE RouteCity (
+    route_id INT NOT NULL REFERENCES Route(id),
+    city_id INT NOT NULL REFERENCES City(id),
+    days INT NOT NULL CHECK (days > 0),
+    PRIMARY KEY (route_id, city_id)
+);
+
+CREATE TABLE Excursion (
+    id SERIAL PRIMARY KEY,
+    city_id INT NOT NULL REFERENCES City(id),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
+    UNIQUE(city_id, name)
+);
+
+CREATE TABLE Tour (
+    id SERIAL PRIMARY KEY,
+    route_id INT NOT NULL REFERENCES Route(id),
+    start_date DATE NOT NULL,
+    duration_days INT NOT NULL CHECK (duration_days > 0),
+    extra_fees NUMERIC(10, 2) DEFAULT 0 CHECK (extra_fees >= 0),
+    extra_description TEXT
+);
+
+
+/*Пояснения и связь с реальными концепциями
+*Для примеров использованы названия городов и экскурсий, *встречающиеся в типовых туристических системах РФ.
+
+*Названия маршрутов и экскурсий взяты с популярных реальных туров и экскурсий в этих городах.
+
+*Числовые значения (цены, длительность, дни) соответствуют типичным значениям в туристических сервисах.
+
+*По структуре запросов видно, как одна таблица связывается с другой через внешние ключи, что важно для понимания реляционной модели в PostgreSQL.
+
+*Такой подход поможет не только выполнить задание, но и понять, как строить полноценную базу с реальными связями между сущностями, как при автоматизации туроператорских процессов.
+*/
+
+-- Задание 2
+--Заполнение таблицы City 
+INSERT INTO City (name) VALUES ('Москва');
+INSERT INTO City (name) VALUES ('Санкт-Петербург');
+INSERT INTO City (name) VALUES ('Казань');
+INSERT INTO City (name) VALUES ('Сочи');
+INSERT INTO City (name) VALUES ('Новосибирск');
+
+--Заполнение таблицы Route
+INSERT INTO Route (name, departure_city_id, description, base_price)
+VALUES ('Золотое Кольцо', 1, 'Маршрут по историческим городам России', 15000);
+
+INSERT INTO Route (name, departure_city_id, description, base_price)
+VALUES ('Северная столица', 2, 'Путешествие по Санкт-Петербургу', 12000);
+
+INSERT INTO Route (name, departure_city_id, description, base_price)
+VALUES ('Восточная Россия', 5, 'Маршрут по Новосибирску и окрестностям', 17000);
+
+INSERT INTO Route (name, departure_city_id, description, base_price)
+VALUES ('Южный отдых', 4, 'Экскурсии по Сочи и побережью', 16000);
+
+INSERT INTO Route (name, departure_city_id, description, base_price)
+VALUES ('Волжское путешествие', 3, 'Путешествие по Казани и Волге', 14000);
+
+--Заполнение таблицы RouteCity
+INSERT INTO RouteCity (route_id, city_id, days) VALUES (1, 1, 2);
+INSERT INTO RouteCity (route_id, city_id, days) VALUES (1, 3, 2);
+INSERT INTO RouteCity (route_id, city_id, days) VALUES (2, 2, 3);
+INSERT INTO RouteCity (route_id, city_id, days) VALUES (3, 5, 3);
+INSERT INTO RouteCity (route_id, city_id, days) VALUES (4, 4, 5);
+
+--Заполнение таблицы Excursion
+INSERT INTO Excursion (city_id, name, description, price)
+VALUES (1, 'Кремль и Красная площадь', 'Историческая экскурсия по центру Москвы', 3500);
+
+INSERT INTO Excursion (city_id, name, description, price)
+VALUES (2, 'Эрмитаж', 'Посещение крупнейшего музея России', 4000);
+
+INSERT INTO Excursion (city_id, name, description, price)
+VALUES (3, 'Казанский Кремль', 'Обзорная экскурсия по древнему Кремлю', 3000);
+
+INSERT INTO Excursion (city_id, name, description, price)
+VALUES (4, 'Олимпийский парк', 'Прогулка по спортивным сооружениям', 2800);
+
+INSERT INTO Excursion (city_id, name, description, price)
+VALUES (5, 'Новосибирский зоопарк', 'Посещение самого большого зоопарка России', 2500);
+
+--Заполнение таблицы Tour
+INSERT INTO Tour (route_id, start_date, duration_days, extra_fees, extra_description)
+VALUES (1, '2025-10-20', 7, 2000, 'Топливный сбор');
+
+INSERT INTO Tour (route_id, start_date, duration_days, extra_fees, extra_description)
+VALUES (2, '2025-11-05', 5, 1500, 'Входные билеты в музеи');
+
+INSERT INTO Tour (route_id, start_date, duration_days, extra_fees, extra_description)
+VALUES (3, '2025-12-10', 8, 3000, 'Дополнительные экскурсии');
+
+INSERT INTO Tour (route_id, start_date, duration_days, extra_fees, extra_description)
+VALUES (4, '2025-10-25', 6, 2500, 'Трансферы');
+
+INSERT INTO Tour (route_id, start_date, duration_days, extra_fees, extra_description)
+VALUES (5, '2025-12-20', 7, 2200, 'Обеды и питание');
+
+
+
+
+--1 RUB = 0.0123 USD (11 октября 2025 года)
+--Получить все экскурсии с пересчитанными USD-ценами (округление вверх)
+
+SELECT
+  id,
+  city_id,
+  name,
+  description,
+  price,
+  CEIL(price * 0.0123) AS price_usd_ceiled
+FROM
+  Excursion;
+
+--Запрос умножает цену в рублях на курс (0.0123), затем округляет *результат вверх — функция CEIL.
+  
+--Найти тур с максимальным числом возможных экскурсий
+SELECT
+  t.*,
+  COUNT(e.id) AS excursion_count
+FROM
+  Tour t
+JOIN
+  Route r ON r.id = t.route_id
+JOIN
+  RouteCity rc ON rc.route_id = r.id
+JOIN
+  Excursion e ON e.city_id = rc.city_id
+GROUP BY
+  t.id
+ORDER BY
+  excursion_count DESC
+LIMIT 1;
+
+--Этот запрос определяет для каждого тура сколько экскурсий можно провести на маршруте (через города маршрута) и возвращает тур с максимумом экскурсий.
