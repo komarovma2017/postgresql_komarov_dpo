@@ -1,0 +1,30 @@
+[project]
+name = "postgresql-komarov-dpo"
+version = "0.1.0"
+description = "Проект mifi_Базы данных и язык SQL"
+authors = [
+    {name = "Mikhail Komarov",email = "komarovma2017@yandex.ru"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "psycopg2-binary (>=2.9.11,<3.0.0)",
+    "pyyaml (>=6.0.3,<7.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+exclude = ["venv", ".venv", "dist", "__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = []
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.14.3"
+
